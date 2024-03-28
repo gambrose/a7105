@@ -1,4 +1,4 @@
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 
 //! `a7105` is a Rust crate that provides a high-level interface for interacting
 //! with the A7105 2.4GHz FSK/GFSK Transceiver, built on top of
@@ -182,5 +182,29 @@ impl<SPI: SpiDevice> A7105<SPI> {
                 Operation::Write(buf),
             ])
             .await
+    }
+}
+
+#[cfg(test)]
+#[cfg(feature = "blocking")]
+mod test {
+    use super::*;
+    use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
+
+    #[test]
+    fn reset_command() {
+        let expectations = [
+            SpiTransaction::transaction_start(),
+            SpiTransaction::write_vec(vec![0, 0]),
+            SpiTransaction::transaction_end(),
+        ];
+
+        let spi = SpiMock::new(&expectations);
+
+        let mut radio = A7105::new(spi);
+
+        radio.command(Command::Reset).unwrap();
+
+        radio.spi.done();
     }
 }

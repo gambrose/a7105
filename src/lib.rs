@@ -190,7 +190,7 @@ impl<SPI: SpiDevice> A7105<SPI> {
 mod test {
     use super::*;
     use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
-    use registers::IdData;
+    use registers::{DataRate, IdData};
 
     #[test]
     fn reset_command() {
@@ -225,6 +225,43 @@ mod test {
         let id_data: IdData = radio.read_reg().unwrap();
 
         assert_eq!(IdData { id: 0x01234567 }, id_data);
+        radio.spi.done();
+    }
+
+    #[test]
+    fn read_data_rate_reg() {
+        let expectations = [
+            SpiTransaction::transaction_start(),
+            SpiTransaction::write(0x4E),
+            SpiTransaction::read(0x20),
+            SpiTransaction::transaction_end(),
+        ];
+
+        let spi = SpiMock::new(&expectations);
+
+        let mut radio = A7105::new(spi);
+
+        let data_rate: DataRate = radio.read_reg().unwrap();
+
+        assert_eq!(DataRate { rate: 0x20 }, data_rate);
+        radio.spi.done();
+    }
+
+    #[test]
+    fn write_data_rate_reg() {
+        let expectations = [
+            SpiTransaction::transaction_start(),
+            SpiTransaction::write(0x0E),
+            SpiTransaction::write(0x20),
+            SpiTransaction::transaction_end(),
+        ];
+
+        let spi = SpiMock::new(&expectations);
+
+        let mut radio = A7105::new(spi);
+
+        radio.write_reg(DataRate { rate: 0x20 }).unwrap();
+
         radio.spi.done();
     }
 }

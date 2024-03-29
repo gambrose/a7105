@@ -112,7 +112,10 @@ impl<SPI: SpiDevice> A7105<SPI> {
     /// radio.write_reg(id_data).await.unwrap();
     /// ````
     #[maybe_async::maybe_async]
-    pub async fn write_reg<R: WritableRegister>(&mut self, reg: R) -> Result<(), SPI::Error> {
+    pub async fn write_reg<const N: usize, R: WritableRegister<N>>(
+        &mut self,
+        reg: R,
+    ) -> Result<(), SPI::Error> {
         self.spi
             .transaction(&mut [
                 Operation::Write(&[R::id()]),
@@ -225,6 +228,24 @@ mod test {
         let id_data: IdData = radio.read_reg().unwrap();
 
         assert_eq!(IdData { id: 0x01234567 }, id_data);
+        radio.spi.done();
+    }
+
+    #[test]
+    fn write_id_reg() {
+        let expectations = [
+            SpiTransaction::transaction_start(),
+            SpiTransaction::write(0x06),
+            SpiTransaction::write_vec(vec![0x67, 0x45, 0x23, 0x01]),
+            SpiTransaction::transaction_end(),
+        ];
+
+        let spi = SpiMock::new(&expectations);
+
+        let mut radio = A7105::new(spi);
+
+        radio.write_reg(IdData { id: 0x01234567 }).unwrap();
+
         radio.spi.done();
     }
 

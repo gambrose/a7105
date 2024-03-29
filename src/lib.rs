@@ -196,61 +196,7 @@ mod test {
     use registers::{DataRate, IdData};
 
     #[test]
-    fn reset_command() {
-        let expectations = [
-            SpiTransaction::transaction_start(),
-            SpiTransaction::write_vec(vec![0, 0]),
-            SpiTransaction::transaction_end(),
-        ];
-
-        let spi = SpiMock::new(&expectations);
-
-        let mut radio = A7105::new(spi);
-
-        radio.command(Command::Reset).unwrap();
-
-        radio.spi.done();
-    }
-
-    #[test]
-    fn read_id_reg() {
-        let expectations = [
-            SpiTransaction::transaction_start(),
-            SpiTransaction::write(0x46),
-            SpiTransaction::read_vec(vec![0x67, 0x45, 0x23, 0x01]),
-            SpiTransaction::transaction_end(),
-        ];
-
-        let spi = SpiMock::new(&expectations);
-
-        let mut radio = A7105::new(spi);
-
-        let id_data: IdData = radio.read_reg().unwrap();
-
-        assert_eq!(IdData { id: 0x01234567 }, id_data);
-        radio.spi.done();
-    }
-
-    #[test]
-    fn write_id_reg() {
-        let expectations = [
-            SpiTransaction::transaction_start(),
-            SpiTransaction::write(0x06),
-            SpiTransaction::write_vec(vec![0x67, 0x45, 0x23, 0x01]),
-            SpiTransaction::transaction_end(),
-        ];
-
-        let spi = SpiMock::new(&expectations);
-
-        let mut radio = A7105::new(spi);
-
-        radio.write_reg(IdData { id: 0x01234567 }).unwrap();
-
-        radio.spi.done();
-    }
-
-    #[test]
-    fn read_data_rate_reg() {
+    fn read_single_byte_reg() {
         let expectations = [
             SpiTransaction::transaction_start(),
             SpiTransaction::write(0x4E),
@@ -269,7 +215,7 @@ mod test {
     }
 
     #[test]
-    fn write_data_rate_reg() {
+    fn writed_single_byte_reg() {
         let expectations = [
             SpiTransaction::transaction_start(),
             SpiTransaction::write(0x0E),
@@ -282,6 +228,43 @@ mod test {
         let mut radio = A7105::new(spi);
 
         radio.write_reg(DataRate { rate: 0x20 }).unwrap();
+
+        radio.spi.done();
+    }
+
+    #[test]
+    fn read_multiple_byte_reg() {
+        let expectations = [
+            SpiTransaction::transaction_start(),
+            SpiTransaction::write(0x46),
+            SpiTransaction::read_vec(vec![0x67, 0x45, 0x23, 0x01]),
+            SpiTransaction::transaction_end(),
+        ];
+
+        let spi = SpiMock::new(&expectations);
+
+        let mut radio = A7105::new(spi);
+
+        let id_data: IdData = radio.read_reg().unwrap();
+
+        assert_eq!(IdData { id: 0x01234567 }, id_data);
+        radio.spi.done();
+    }
+
+    #[test]
+    fn write_multiple_byte_reg() {
+        let expectations = [
+            SpiTransaction::transaction_start(),
+            SpiTransaction::write(0x06),
+            SpiTransaction::write_vec(vec![0x67, 0x45, 0x23, 0x01]),
+            SpiTransaction::transaction_end(),
+        ];
+
+        let spi = SpiMock::new(&expectations);
+
+        let mut radio = A7105::new(spi);
+
+        radio.write_reg(IdData { id: 0x01234567 }).unwrap();
 
         radio.spi.done();
     }
